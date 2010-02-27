@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>beforeRunningCommand</key>
+	<string>nop</string>
+	<key>command</key>
+	<string>#!/usr/bin/env ruby -wKU
+
+SUPPORT        = ENV['TM_SUPPORT_PATH']
+DIALOG         = SUPPORT + '/bin/tm_dialog'
+
+require SUPPORT + '/lib/osx/plist'
+require SUPPORT + '/lib/textmate'
+require SUPPORT + '/lib/exit_codes'
+
+app_bundle_path = "/Applications/TextMate.app/Contents/SharedSupport/Bundles"
+user_bundle_path = ENV['HOME'] + "/Library/Application Support/TextMate/Bundles"
+pristine_bundle_path = ENV['HOME'] + "/Library/Application Support/TextMate/Pristine Copy/Bundles"
+
+found_bundles = []
+
+if File.exists? user_bundle_path
+
+Dir.foreach("#{user_bundle_path}") do |item| 
+    found_bundles.push( { 'title' =&gt; item, 'path' =&gt; "#{user_bundle_path}/"+ "#{item}" } ) if item =~ /\.tmbundle/
+end
+
+end
+
+if File.exists? pristine_bundle_path
+
+found_bundles.push( { 'title' =&gt; '-', 'path' =&gt; "-" } ) if found_bundles.length &gt; 1
+
+Dir.foreach("#{pristine_bundle_path}") do |item| 
+    found_bundles.push( { 'title' =&gt; item, 'path' =&gt; "#{pristine_bundle_path}/"+ "#{item}" } ) if item =~ /\.tmbundle/
+end    
+
+end
+
+if File.exists? app_bundle_path
+
+found_bundles.push( { 'title' =&gt; '-', 'path' =&gt; "-" } ) if found_bundles.length &gt; 1
+
+Dir.foreach("#{app_bundle_path}") do |item| 
+    found_bundles.push( { 'title' =&gt; item, 'path' =&gt; "#{app_bundle_path}/"+ "#{item}" } ) if item =~ /\.tmbundle/
+end
+
+end
+
+
+if found_bundles.empty?
+
+TextMate.exit_show_tool_tip "No Bundles Found"
+
+else
+
+all_bundles = found_bundles.collect { |e| { 'title' =&gt; e['title'], 'path' =&gt; e['path']  }}
+plist = { 'menuItems' =&gt; all_bundles }.to_plist
+res = OSX::PropertyList::load(`#{e_sh DIALOG} -up #{e_sh plist}`)
+TextMate.exit_discard() unless res.has_key? 'selectedMenuItem'
+choice = res['selectedMenuItem']
+
+end
+
+`open -a TextMate "#{choice['path']}"`
+</string>
+	<key>input</key>
+	<string>none</string>
+	<key>keyEquivalent</key>
+	<string></string>
+	<key>name</key>
+	<string>Edit Bundle</string>
+	<key>output</key>
+	<string>discard</string>
+	<key>uuid</key>
+	<string>19D0EA37-E6CF-45A8-9B62-410F08DDC79E</string>
+</dict>
+</plist>
